@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Outfit', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Commas converted to rgb values for standard CSS custom property consumption */
+  --color-neutral: rgb(247, 241, 255);
+  --color-neutral-50: rgb(242, 236, 250);
+  --color-neutral-100: rgb(244, 244, 245);
+  --color-neutral-200: rgb(222, 216, 229);
+  --color-neutral-300: rgb(207, 202, 213);
+  --color-neutral-400: rgb(159, 155, 164);
+  --color-neutral-500: rgb(112, 110, 116);
+  --color-neutral-600: rgb(82, 80, 85);
+  --color-neutral-700: rgb(39, 45, 63);
+  --color-neutral-800: rgb(0, 0, 0);
+  --color-neutral-900: rgb(24, 24, 27);
+
+  --color-primary-50: rgb(245, 243, 255);
+  --color-primary-100: rgb(237, 233, 254);
+  --color-primary-200: rgb(221, 214, 254);
+  --color-primary-300: rgb(196, 181, 253);
+  --color-primary-400: rgb(167, 139, 250);
+  --color-primary-500: rgb(139, 92, 246);
+  --color-primary-600: rgb(124, 58, 237);
+  --color-primary-700: rgb(109, 40, 217);
+  --color-primary-800: rgb(91, 33, 182);
+  --color-primary-900: rgb(76, 29, 149);
+
+  --color-secondary-50: rgb(253, 244, 255);
+  --color-secondary-100: rgb(250, 232, 255);
+  --color-secondary-200: rgb(245, 208, 254);
+  --color-secondary-300: rgb(240, 171, 252);
+  --color-secondary-400: rgb(232, 121, 249);
+  --color-secondary-500: rgb(217, 70, 239);
+  --color-secondary-600: rgb(192, 38, 211);
+  --color-secondary-700: rgb(162, 28, 175);
+  --color-secondary-800: rgb(134, 25, 143);
+  --color-secondary-900: rgb(112, 26, 117);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-neutral-800);
+    color: var(--color-neutral-300);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+}

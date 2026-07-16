@@ -1,0 +1,31 @@
+{
+  "name": "@stegcloak/core",
+  "version": "2.0.0",
+  "main": "./dist/cjs/stegcloak.js",
+  "types": "./dist/cjs/stegcloak.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/stegcloak.ts",
+      "node": {
+        "import": "./dist/esm/stegcloak.mjs",
+        "require": "./dist/cjs/stegcloak.js"
+      },
+      "import": "./src/stegcloak.ts",
+      "require": "./dist/cjs/stegcloak.js",
+      "default": "./dist/cjs/stegcloak.js"
+    }
+  },
+  "scripts": {
+    "build:cjs": "tsc -p tsconfig.json",
+    "build:esm": "esbuild src/stegcloak.ts --bundle --format=esm --platform=node --external:libsodium-wrappers-sumo --external:zstd-codec --outfile=dist/esm/stegcloak.mjs",
+    "build": "npm run build:cjs && npm run build:esm"
+  },
+  "peerDependencies": {
+    "libsodium-wrappers-sumo": "^0.8.4",
+    "zstd-codec": "^0.1.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.0.0"
+  }
+}

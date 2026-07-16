@@ -1,5 +1,7 @@
 node_modules
 webpack.config.js
-assets
 dist
-README.md
+webapp
+config-samples
+verify-v2.js
+.git

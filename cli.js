@@ -1,91 +1,91 @@
 #!/usr/bin/env node
-'use strict'
 
-// CLI TOOL Full of sideffects !
+// CLI TOOL — full of side-effects!
 
-const {
-  program
-} = require('commander')
-const StegCloak = require('./stegcloak')
-const R = require('ramda')
-const chalk = require('chalk')
-const clipboardy = require('clipboardy')
-var inquirer = require('inquirer')
-const ora = require('ora')
-const fs = require('fs')
-const jsonfile = require('jsonfile');
-const { zwcHuffMan } = require('./components/compact')
-const { zwcOperations } = require("./components/message");
-const { expand } = zwcHuffMan(StegCloak.zwc)
-const { detach } = zwcOperations(StegCloak.zwc);
+import { program } from "commander";
+import StegCloak from "./stegcloak.js";
+import chalk from "chalk";
+import clipboardy from "clipboardy";
+import inquirer from "inquirer";
+import ora from "ora";
+import { readFileSync, writeFileSync } from "fs";
+import { readFile as readFileJson } from "jsonfile";
+import { detach, decodeBase6, ZWC, FLAG_ENCRYPTED } from "@stegcloak/core";
 
+const C = { ZWC, FLAG_ENCRYPTED };
 
-function cliHide(secret, password, cover, crypt, integrity, op) {
-  const stegcloak = new StegCloak(crypt, integrity)
-  const spinner = ora(chalk.cyan.bold('Hiding your text'))
-  spinner.start()
-  let payload
+async function cliHide(secret, password, cover, crypt, integrity, op) {
+  const stegcloak = new StegCloak(crypt, integrity);
+  const spinner = ora(chalk.cyan.bold("Hiding your text"));
+  spinner.start();
+  let payload;
   try {
-    payload = stegcloak.hide(secret, password, cover, op)
+    payload = await stegcloak.hide(secret, password, cover);
   } catch (e) {
-    console.log('\n')
-    console.log(chalk.red(e))
-    process.exit(0)
+    console.log("\n");
+    console.log(chalk.red(e));
+    process.exit(0);
   }
-  clipboardy.writeSync(payload)
+  await clipboardy.write(payload);
   setTimeout(() => {
-    spinner.stop()
+    spinner.stop();
     if (op) {
-      fs.writeFileSync(op, payload)
-      console.log(chalk.grey(`\n Written to ${op} \n`))
-      process.exit(0)
+      writeFileSync(op, payload);
+      console.log(chalk.grey(`\n Written to ${op} \n`));
+      process.exit(0);
     }
-    console.log(chalk.grey('\nCopied to clipboard\n'))
-    process.exit(0)
-  }, 300)
-};
-
-function createStringQuestion(str, nameIt) {
-  return { type: 'string', message: str, name: nameIt }
+    console.log(chalk.grey("\nCopied to clipboard\n"));
+    process.exit(0);
+  }, 300);
 }
 
-function cliReveal(payload, password, op) {
-  const stegcloak = new StegCloak()
-  var spinner = ora(chalk.cyan.bold('Decrypting'))
-  spinner.start()
-  let secret
+function createStringQuestion(str, nameIt) {
+  return { type: "input", message: str, name: nameIt };
+}
+
+async function cliReveal(payload, password, op) {
+  const stegcloak = new StegCloak();
+  const spinner = ora(chalk.cyan.bold("Decrypting"));
+  spinner.start();
+  let secret;
   try {
-    secret = stegcloak.reveal(payload, password)
+    secret = await stegcloak.reveal(payload, password);
   } catch (e) {
-    console.log('\n')
-    console.log(chalk.red(e))
-    process.exit(0)
+    console.log("\n");
+    console.log(chalk.red(e));
+    process.exit(0);
   }
   setTimeout(() => {
-    spinner.stop()
+    spinner.stop();
     if (op) {
-      fs.writeFileSync(op, secret)
-      console.log(chalk.grey(`\n Written to ${op} \n`))
+      writeFileSync(op, secret);
+      console.log(chalk.grey(`\n Written to ${op} \n`));
     }
-    console.log('\n')
-    console.log(chalk.cyan.bold('         Secret: ') + chalk.green.bold(secret))
-    console.log('\n')
-    process.exit(0)
-  }, 300)
-};
+    console.log("\n");
+    console.log(
+      chalk.cyan.bold("         Secret: ") + chalk.green.bold(secret)
+    );
+    console.log("\n");
+    process.exit(0);
+  }, 300);
+}
 
 program
-  .command('hide [secret] [cover]')
-  .option('-fc, --fcover <fcover> ', 'Extract cover text from file')
-  .option('-fs, --fsecret <fsecret> ', 'Extract secret text from file')
-  .option('-n, --nocrypt', "If you don't need encryption", false)
-  .option('-i, --integrity', 'If additional security of preventing tampering is needed', false)
-  .option('-o, --output <output> ', 'Stream the results to an output file')
-  .option('-c, --config <config>', 'Config file')
+  .command("hide [secret] [cover]")
+  .option("-fc, --fcover <fcover> ", "Extract cover text from file")
+  .option("-fs, --fsecret <fsecret> ", "Extract secret text from file")
+  .option("-n, --nocrypt", "If you don't need encryption", false)
+  .option(
+    "-i, --integrity",
+    "If additional security of preventing tampering is needed",
+    false
+  )
+  .option("-o, --output <output> ", "Stream the results to an output file")
+  .option("-c, --config <config>", "Config file")
   .action(async (secret, cover, args) => {
     if (args.config) {
-      jsonfile.readFile(args.config)
-        .then(obj => {
+      readFileJson(args.config)
+        .then(async (obj) => {
           if (!("secret" in obj && "cover" in obj)) {
             console.error(chalk.red("Config Parse error") + " : Missing inputs");
             process.exit(0);
@@ -94,136 +94,190 @@ program
           cover = obj.cover;
           let password = obj.password || process.env["STEGCLOAK_PASSWORD"];
           if (!obj.password && process.env["STEGCLOAK_PASSWORD"]) {
-            console.warn(chalk.yellow("Warning:") + " using password from environment variable");
+            console.warn(
+              chalk.yellow("Warning:") +
+                " using password from environment variable"
+            );
           }
           let integrity = obj.integrity || false;
           let nocrypt = obj.nocrypt || false;
           let output = obj.output || false;
-          cliHide(secret, password, cover, !nocrypt, integrity, output);
+          await cliHide(secret, password, cover, !nocrypt, integrity, output);
         })
-        .catch(error => console.error(error))
+        .catch((error) => console.error(error));
       return;
     }
 
-    const questions = process.env["STEGCLOAK_PASSWORD"] ? (console.warn(chalk.yellow("Warning:") + " using password from environment variable\n"), []) : [{
-      type: 'password',
-      message: 'Enter password :',
-      name: 'password',
-      mask: true
-    }];
+    const questions = process.env["STEGCLOAK_PASSWORD"]
+      ? (console.warn(
+          chalk.yellow("Warning:") + " using password from environment variable\n"
+        ),
+        [])
+      : [
+          {
+            type: "password",
+            message: "Enter password :",
+            name: "password",
+            mask: "*",
+          },
+        ];
 
-    const qsecret = "What's your secret? :"
+    const qsecret = "What's your secret? :";
+    const qcover =
+      "Enter the text you want to hide your secret within? (Minimum 2 words):";
 
-    const qcover = 'Enter the text you want to hide your secret within? (Minimum 2 words):'
-
-    if (args.nocrypt) questions.pop()
+    if (args.nocrypt) questions.pop();
 
     if (args.fcover) {
-      cover = fs.readFileSync(args.fcover, 'utf-8');
+      cover = readFileSync(args.fcover, "utf-8");
     }
 
     if (args.fsecret) {
-      secret = fs.readFileSync(args.fsecret, 'utf-8')
+      secret = readFileSync(args.fsecret, "utf-8");
     }
 
     if (!secret && !cover) {
-      questions.push(createStringQuestion(qsecret, 'secret'), createStringQuestion(qcover, 'cover'))
+      questions.push(
+        createStringQuestion(qsecret, "secret"),
+        createStringQuestion(qcover, "cover")
+      );
     } else if (!secret) {
-      questions.push(createStringQuestion(qsecret, 'secret'))
+      questions.push(createStringQuestion(qsecret, "secret"));
     } else if (!cover) {
-      questions.push(createStringQuestion(qcover, 'cover'))
+      questions.push(createStringQuestion(qcover, "cover"));
     }
+
     let answers = {};
     if (questions.length) {
       answers = await inquirer.prompt(questions);
     }
-    cliHide(answers.secret || secret, answers.password || process.env["STEGCLOAK_PASSWORD"], cover || answers.cover, !args.nocrypt, args.integrity, args.output)
-  })
-
-// CLI
+    await cliHide(
+      answers.secret || secret,
+      answers.password || process.env["STEGCLOAK_PASSWORD"],
+      cover || answers.cover,
+      !args.nocrypt,
+      args.integrity,
+      args.output
+    );
+  });
 
 program
-  .command('reveal [message]')
-  .option('-f, --file <file> ', 'Extract message to be revealed from file')
-  .option('-cp, --clip', 'Copy message directly from clipboard')
-  .option('-o, --output <output> ', 'Stream the secret to an output file')
-  .option('-c, --config <config>', 'Config file')
-  .action((data, args) => {
-
+  .command("reveal [message]")
+  .option("-f, --file <file> ", "Extract message to be revealed from file")
+  .option("-cp, --clip", "Copy message directly from clipboard")
+  .option("-o, --output <output> ", "Stream the secret to an output file")
+  .option("-c, --config <config>", "Config file")
+  .action(async (data, args) => {
     if (args.config) {
-      jsonfile.readFile(args.config)
-        .then(obj => {
+      readFileJson(args.config)
+        .then(async (obj) => {
           if (!("message" in obj)) {
             console.error(chalk.red("Config Parse error") + " : Missing inputs");
             process.exit(0);
           }
           data = obj.message;
           if (!obj.password && process.env["STEGCLOAK_PASSWORD"]) {
-            console.warn(chalk.yellow("Warning:") + " using password from environment variable");
+            console.warn(
+              chalk.yellow("Warning:") +
+                " using password from environment variable"
+            );
           }
           let password = obj.password || process.env["STEGCLOAK_PASSWORD"];
           let output = obj.output || false;
-          cliReveal(data, password, output)
+          await cliReveal(data, password, output);
         })
-        .catch(error => console.error(error));
+        .catch((error) => console.error(error));
       return;
     }
 
-    const questions = [{ type: 'string', message: 'Enter message to decrypt:', name: 'payload' }, {
-      type: 'password',
-      message: 'Enter password :',
-      name: 'password',
-      mask: true
-    }];
-
+    const questions = [
+      { type: "input", message: "Enter message to decrypt:", name: "payload" },
+      {
+        type: "password",
+        message: "Enter password :",
+        name: "password",
+        mask: "*",
+      },
+    ];
 
     if (args.file) {
-      data = fs.readFileSync(args.file, 'utf-8')
-      console.log(chalk.cyan(`Extracted text from ${args.file} to be decrypted !`))
-      console.log()
+      data = readFileSync(args.file, "utf-8");
+      console.log(
+        chalk.cyan(`Extracted text from ${args.file} to be decrypted !`)
+      );
+      console.log();
     }
 
     if (args.clip || data) {
-      const mutatedQuestions = questions.slice(1)
+      const mutatedQuestions = questions.slice(1);
 
-      data = data || clipboardy.readSync()
+      data = data || (await clipboardy.read());
 
-      const stream = expand(detach(data))
-
-      if (stream[0] === StegCloak.zwc[2] || process.env["STEGCLOAK_PASSWORD"]) {
-        if (process.env["STEGCLOAK_PASSWORD"]) {
-          console.warn(chalk.yellow("Warning:") + " using password from environment variable");
+      let isEncrypted = true;
+      try {
+        const detached = detach(data, StegCloak.zwc);
+        const decoded = decodeBase6(detached, StegCloak.zwc);
+        if (decoded.length >= 2) {
+          const flags = decoded[1];
+          isEncrypted = (flags & C.FLAG_ENCRYPTED) !== 0;
         }
-        mutatedQuestions.pop()
+      } catch (e) {
+        // default to expecting encryption
+      }
+
+      if (!isEncrypted || process.env["STEGCLOAK_PASSWORD"]) {
+        if (process.env["STEGCLOAK_PASSWORD"]) {
+          console.warn(
+            chalk.yellow("Warning:") +
+              " using password from environment variable"
+          );
+        }
+        mutatedQuestions.pop();
       }
 
       if (mutatedQuestions.length) {
-        inquirer.prompt(mutatedQuestions).then(answers => {
-          cliReveal(data, answers.password || process.env["STEGCLOAK_PASSWORD"], args.output)
-        })
+        const answers = await inquirer.prompt(mutatedQuestions);
+        await cliReveal(
+          data,
+          answers.password || process.env["STEGCLOAK_PASSWORD"],
+          args.output
+        );
       } else {
-        cliReveal(data, process.env["STEGCLOAK_PASSWORD"] || null, args.output)
+        await cliReveal(
+          data,
+          process.env["STEGCLOAK_PASSWORD"] || null,
+          args.output
+        );
+      }
+    } else {
+      const answers = await inquirer.prompt([questions[0]]);
+      let isEncrypted = true;
+      try {
+        const detached = detach(answers.payload, StegCloak.zwc);
+        const decoded = decodeBase6(detached, StegCloak.zwc);
+        if (decoded.length >= 2) {
+          const flags = decoded[1];
+          isEncrypted = (flags & C.FLAG_ENCRYPTED) !== 0;
+        }
+      } catch (e) {
+        // default to expecting encryption
+      }
+
+      if (!isEncrypted) {
+        await cliReveal(answers.payload, null, args.output);
+      } else {
+        if (!process.env["STEGCLOAK_PASSWORD"]) {
+          const ans = await inquirer.prompt([questions[1]]);
+          await cliReveal(answers.payload, ans.password, args.output);
+        } else {
+          await cliReveal(
+            answers.payload,
+            process.env["STEGCLOAK_PASSWORD"],
+            args.output
+          );
+        }
       }
     }
+  });
 
-    else {
-      inquirer.prompt([questions[0]]).then(answers => {
-        const stream = expand(detach(answers.payload))
-
-        if (stream[0] === StegCloak.zwc[2]) {
-          cliReveal(answers.payload, null, args.output)
-        } else {
-          if (!process.env["STEGCLOAK_PASSWORD"]) {
-            inquirer.prompt([questions[1]]).then(ans => {
-              cliReveal(answers.payload, ans.password, args.output)
-            })
-          } else {
-            cliReveal(answers.payload, process.env["STEGCLOAK_PASSWORD"], args.output)
-          }
-
-        }
-      })
-    }
-  })
-
-program.parse(process.argv)
+program.parse(process.argv);

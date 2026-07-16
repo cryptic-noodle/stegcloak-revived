@@ -3,56 +3,64 @@
   <img src="assets/stegCloakIcon.svg" alt="StegCloak" width="100">
   <br>
   <br>
-  <span>StegCloak</span>
+  <span>StegCloak Revived</span>
   <br>
-  <img src="https://img.shields.io/npm/l/stegcloak?style=plastic" />
-  <a href="https://www.npmjs.com/package/stegcloak"> <img src="https://img.shields.io/npm/v/stegcloak?style=plastic" /> </a>
-   <a href="https://github.com/sindresorhus/awesome-nodejs">
-  <img src="https://raw.githubusercontent.com/sindresorhus/awesome/main/media/badge.svg" />
-  </a>
-  <img src="https://img.shields.io/badge/code_style-standard-brightgreen.svg" />
+  <img src="https://img.shields.io/badge/version-2.0.0-blueviolet?style=plastic" />
+  <img src="https://img.shields.io/badge/license-MIT-brightgreen?style=plastic" />
   <br>
 </h1>
-<h4 align="center">The Cloak of Invisibility for your texts</h4>
+<h4 align="center">The Cloak of Invisibility for your texts — rebuilt from the ground up</h4>
 
 <p align="justify">
-StegCloak is a pure JavaScript steganography module designed in functional programming style, to hide secrets inside text by compressing and encrypting the secret before cloaking it with special unicode invisible characters. It can be used to safely watermark strings, invisible scripts on webpages, texts on social media or for any other covert communication. Completely invisible! See how it works in-depth in this Medium <a href="https://blog.bitsrc.io/how-to-hide-secrets-in-strings-modern-text-hiding-in-javascript-613a9faa5787">article</a> or watch our <a href="https://www.youtube.com/watch?v=RBDqZwcGvQk">demo</a> to know what it does.
-<p>
-
-<a href="https://standardjs.com" style="position: absolute; top: 100px; right: 20px; padding: 0 0 20px 20px;"><img src="https://cdn.rawgit.com/feross/standard/master/sticker.svg" alt="JavaScript Standard Style" width="80" align="right"></a>
-
-## Features
-- Protect your invisible secret using passwords and HMAC integrity
-- Cryptographically secure by encrypting the invisible secret using AES-256-CTR.
-- Uses 6 Invisible characters in unicode characters that works everywhere in the web - Tweets, Gmail, WhatsApp, Telegram, Instagram, Facebook, and many more!
-- Maximum Compression to reduce the payload (LZ, Huffman).
-- Completely invisible, uses Zero Width Characters instead of white spaces or tabs.
-- Super fast! Hides the Wikipedia page-source for steganography (800 lines and 205362 characters) within a covertext of 3 words in under one second.
-- Hiding files in strings can be achieved by uploading the file to cloud and stegcloaking the link in the string
-- Written in pure functional style.
-- Usage - Available as an API module, a CLI and also a <a href='https://stegcloak.surge.sh'>Web Interface</a> (optimized with web workers). 
+StegCloak hides secrets inside ordinary-looking text by compressing and encrypting the secret, then cloaking it with invisible Unicode zero-width characters. Paste the result into a tweet, an email, a chat message, anywhere — it reads as normal text, but carries a hidden, encrypted payload only the intended recipient can reveal.
+</p>
 
 <br>
 
-![StegCloak Demo](assets/stegcloak.gif)
+## About this fork
 
+**StegCloak Revived** is a maintenance fork of the original [StegCloak](https://github.com/KuroLabs/stegcloak) by KuroLabs, which has been unmaintained for some time. This project keeps the core idea alive, brings the codebase into TypeScript, and replaces the aging cryptography and compression with modern, audited primitives. It is not a from-scratch rewrite — it's a revival.
+
+- Original project: [github.com/KuroLabs/stegcloak](https://github.com/KuroLabs/stegcloak)
+- This fork: [github.com/cryptic-noodle/stegcloak-revived](https://github.com/cryptic-noodle/stegcloak-revived)
+- Live web app: **[stegcloak-revived.vercel.app](https://stegcloak-revived.vercel.app/)**
+
+## Highlights
+
+- 📴 **Offline-first PWA** — the web app is a fully installable Progressive Web App. Install it on Android, iOS, or desktop (Chrome/Firefox) and it works with no network connection at all; every encode/decode happens locally in your browser.
+- 🔐 **Way better security** — the old AES-256-CTR + custom HMAC scheme is gone. Encryption is now **Argon2id** for password-based key derivation, **XChaCha20-Poly1305** (via libsodium) for authenticated encryption, and a dedicated commitment tag to guard against tampering.
+- 📉 **Smaller output for large inputs** — switching compression to **zstd** and re-encoding the hidden stream in **base-6** (instead of the original binary scheme) produces a noticeably shorter invisible-character payload than the original StegCloak when hiding larger secrets, while remaining fully invisible.
+- 🧩 **Modern monorepo** — the crypto/compression/encoding core lives in its own TypeScript package (`@stegcloak/core`), shared by both the CLI and the web app.
+
+## How it works
+
+<img src='assets/FlowDiagram.svg'>
+
+At a high level: the secret is compressed (zstd), optionally encrypted (Argon2id-derived keys + XChaCha20-Poly1305), encoded into a stream of 6 invisible zero-width Unicode characters (base-6), and stitched invisibly between the words of your cover text.
+
+## Project layout
+
+```
+stegcloak-revived/
+├── packages/core/   # @stegcloak/core — crypto, compression, encoding (TypeScript)
+├── webapp/          # React + Vite PWA — the web app behind stegcloak-webapp.vercel.app
+├── cli.js           # Command-line interface
+└── stegcloak.js     # Node/CLI-facing wrapper around @stegcloak/core
+```
 
 ## Installing
 
-Using npm,
+Using npm, as a global CLI tool:
 
 ```bash
 $ npm install -g stegcloak
 ```
-Using npm (to use it locally in your program),
+
+Using npm, to use it as a library in your own project:
 
 ```bash
 $ npm install stegcloak
 ```
-
-## How it works
-
-<img src='assets/FlowDiagram.PNG'>
 
 ## CLI Usage
 
@@ -73,13 +81,12 @@ Options:
   -o, --output <output>     Stream the results to an output file
   -c, --config <file>       Config file
   -h, --help                display help for command
-
 ```
 
 ### Reveal
 
 ```bash
-$ stegcloak reveal       
+$ stegcloak reveal
 ```
 Options:
 
@@ -92,59 +99,36 @@ Options:
   -c, --config <file>     Config file
   -h, --help              display help for command
 ```
+
 ### Additional support
 
 - **STEGCLOAK_PASSWORD** environment variable, if set, will be used by default as password.
-
-- **Configuration file** support to configure StegCloak CLI and to avoid prompts. Read the config docs <a href='https://github.com/KuroLabs/stegcloak/wiki/StegCloak-Configuration-File'>here.</a>
+- **Configuration file** support to configure the CLI and skip prompts — see `config-samples/` for example `hide-config.json` / `reveal-config.json` files.
 
 ## API Usage
 
 ```javascript
-const StegCloak = require('stegcloak');
+import { hide, reveal } from "@stegcloak/core";
 
-const stegcloak = new StegCloak(true, false);  // Initializes with encryption true and hmac false for hiding
+const magic = await hide({
+  secret: "Voldemort is back",
+  cover: "The WiFi's not working here!",
+  password: "mischief managed",
+});
 
-// These arguments are used only during hide
+console.log(magic); // The WiFi's not working here!
 
-// Can be changed later by switching boolean flags for stegcloak.encrypt and stegcloak.integrity
-
-```
-###### What's HMAC and do I need it?
-
-<p align='justify'>
-HMAC is an additional fingerprint security step taken towards tampering of texts and to verify if the message received was actually sent by the intended sender. If the data is sent through WhatsApp, Messenger or any social media platform, this is already taken care of! However, if you are using StegCloak in your program to safely transmit and retrieve, this option can be enabled and StegCloak takes care of it.
-</p>
-
-### Hide
-
-###### `stegcloak.hide(secret, password, cover) -> string`
-
-```javascript
-const magic = stegcloak.hide("Voldemort is back", "mischief managed", "The WiFi's not working here!");
-
-// Uses stegcloak.encrypt and stegcloak.integrity booleans for obfuscation
-
-console.log(magic);  // The WiFi's not working here!
-```
-
-### Reveal
-
-###### `stegcloak.reveal(data, password) -> string`
-
-```javascript
-const secret = stegcloak.reveal(magic, "mischief managed");
-
-// Automatically detects if encryption or integrity checks were done during hide and acts accordingly
+const secret = await reveal({ text: magic, password: "mischief managed" });
 
 console.log(secret); // Voldemort is back
 ```
 
-This amazing [blog](https://iwantmore.pizza/posts/zwc-fingerprint.html) by [Francesco Soncina](https://twitter.com/phraaaaaaa) shows how you could use the StegCloak API to watermark any text on your website.
+Compression and encryption flags are stored in the hidden payload itself, so `reveal` automatically detects what was done during `hide` and acts accordingly. If you don't pass a `password` to `hide`, the payload is compressed but not encrypted.
 
-#### Important
+## Important
+
 <p align='justify'>
-StegCloak doesn't solve the Alice-Bob-Warden problem, it's powerful only when people are not looking for it and it helps you achieve that really well, given its invisible properties around the web! It could be safely used for watermarking in forums, invisible tweets, social media etc. Please don't use it when you know there's someone who is actively sniffing your data - looking at the unicode characters through a data analysis tool. In that case, even though the secret encoded cannot be deciphered, the fact lies that the Warden (middle-man) knows some secret communication took place, because he would have noticed an unusual amount of special invisible characters.
+StegCloak doesn't solve the Alice-Bob-Warden problem — it's powerful only when nobody is specifically looking for it, and it does that really well thanks to its invisible characters. It's great for watermarking, invisible tweets, social media, and similar low-suspicion channels. Don't rely on it against an adversary who is actively inspecting your text for unusual invisible Unicode characters: while the hidden secret itself stays encrypted, the presence of a hidden payload could still be detected by that kind of analysis.
 </p>
 
 ## Contributing
@@ -153,7 +137,8 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 ## License
 
-[MIT](https://github.com/KuroLabs/stegcloak/blob/master/LICENSE) - Copyright (c) 2020 [Kandavel A](https://github.com/AK5123), [Mohanasundar M](https://github.com/mohanpierce99), [Sujin LK](https://github.com/sujink1999)
+[MIT](LICENSE) — this project is a fork of [StegCloak](https://github.com/KuroLabs/stegcloak) by Kandavel A, Mohanasundar M, and Sujin LK. See the [LICENSE](LICENSE) file for full copyright details.
 
 ## Acknowledgements
-The StegCloak logo was designed by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a>.
+
+The StegCloak concept and original implementation are by [KuroLabs](https://github.com/KuroLabs). The StegCloak logo was designed by [Smashicons](https://www.flaticon.com/authors/smashicons).

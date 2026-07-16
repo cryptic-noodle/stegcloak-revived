@@ -1,2 +1,43 @@
-node_modules
-webpack.config.js
+# ─── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+**/node_modules/
+
+# ─── Build outputs ─────────────────────────────────────────────────────────────
+packages/core/dist/
+webapp/dist/
+*.min.js
+
+# ─── Environment & secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── OS / editor artifacts ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# ─── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── TypeScript cache ──────────────────────────────────────────────────────────
+*.tsbuildinfo
+**/node_modules/.tmp/
+
+# ─── Vite cache ────────────────────────────────────────────────────────────────
+webapp/.vite/
+
+# ─── PWA generated service worker (artifact, regenerated on build) ─────────────
+webapp/public/sw.js
+webapp/public/workbox-*.js
+
+# ─── Plan / implementation docs (not for shipping) ────────────────────────────
+stegcloak-revived-implementation-plan.md
+stegcloak-revived-implementation-plan-revised.md
+STEGCLOAK_V2_UPGRADE_PLAN.md
